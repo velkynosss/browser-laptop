@@ -4,6 +4,7 @@
 
 'use strict'
 const um = require('@brave-intl/bat-usermodel')
+const elph = require('@brave-intl/bat-elph')
 const path = require('path')
 const getSSID = require('detect-ssid')
 const underscore = require('underscore')
@@ -39,7 +40,7 @@ let sampleAdFeed
 
 let lastSingleClassification
 
-const generateAdReportingEvent = (state, eventType, action) => {
+const generateAdReportingEvent = (state, eventType, action) => { 
   let map = {}
 
   map.type = eventType
@@ -217,6 +218,36 @@ const saveCachedInfo = (state) => {
   // writes stuff to leveldb
   return state
 }
+
+// begin timing related pieces
+const updateTimingModel = (state) => {
+  let letter = stateToLetter(state)
+  let mdl = userModelState.getUserModelTimingMdl(state, true)
+  if(mdl.length==0) {
+    mdl = elph.initOnlineELPH()  //TODO init with useful Hspace
+  }
+  mdl = elph.updateOnlineELPH(letter, mdl)
+  return userModelState.setUserModelTimingMdl(state,mdl)
+}
+
+const stateToLetter = (state) => {
+  let tvar = topicVariance(state)
+  let sch = userModelState.getSearchState() 
+  let shp = userModelState.getShoppingState() // this is listed as 'never hit' in flag source
+  let buy = userModelState.getUserBuyingState() // shopping or buying same to us for now
+  return elph.alphabetizer(tvar, shp, buy) // need to encode two more, or change alphabetizer
+}
+
+const topicVariance = (state) => {
+  let varval = 1
+  return valueToLowHigh(varval,1.5)
+}
+
+const valueToLowHigh = (x, thresh) => {
+  let out = (x < thresh) ? 'low' : 'high'
+  return out
+}
+// end timing related pieces
 
 const testShoppingData = (state, url) => {
   const hostname = urlUtil.getHostname(url)

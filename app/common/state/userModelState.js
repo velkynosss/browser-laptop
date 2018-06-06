@@ -106,6 +106,20 @@ const setReportingEventQueue = (state, queue) => {
   return state.setIn(['userModel', 'reportingEventQueue'], queue)
 }
 
+const getUserModelTimingMdl = (state, mutable = true) => {
+  let mdl = state.getIn(['userModel', 'timingModel']) || Immutable.List()
+  if (!mutable) {
+    return makeImmutable(mdl) // immutable version
+  } else {
+    return makeJS(mdl) // mutable version, which is what elph expects
+  }
+}
+
+const setUserModelTimingMdl = (state, model) => {
+  let mimut = makeImmutable(model)
+  return state.setIn(['userModel', 'timingModel'], mimut)
+}
+
 const userModelState = {
   setUserModelValue: (state, key, value) => {
     state = validateState(state)
@@ -245,6 +259,11 @@ const userModelState = {
     return state
   },
 
+  getUserBuyingState: (state) => {
+    state = validateState(state)
+    return state.getIn(['userModel', 'purchaseActive'])    
+  },
+  
   setUrlActive: (state, url) => {
     state = validateState(state)
     if (url == null || !urlUtil.isURL(url)) { // bum url; log this?
