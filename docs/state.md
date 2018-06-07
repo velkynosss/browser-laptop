@@ -646,6 +646,7 @@ AppStore
     lastShopTime: any,
     lastUserActivity: any,
     lastUserIdleStopTime: any,
+    locales: string[],
     pageScoreHistory: Array,
     score: any,
     searchActivity: any,
