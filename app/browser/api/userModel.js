@@ -40,7 +40,7 @@ let sampleAdFeed
 
 let lastSingleClassification
 
-const generateAdReportingEvent = (state, eventType, action) => { 
+const generateAdReportingEvent = (state, eventType, action) => {
   let map = {}
 
   map.type = eventType
@@ -67,7 +67,7 @@ const generateAdReportingEvent = (state, eventType, action) => {
             {
               const result = data.get('result')
               const translate = { 'clicked': 'clicked', 'closed': 'dismissed', 'ignored': 'timeout' }
-              map.notificationType = translate[result] || result
+              map.notificationType = translate[result] || result // SCL note; put the click/no-click elph update here
               break
             }
           case notificationTypes.NOTIFICATION_CLICK:
@@ -220,27 +220,43 @@ const saveCachedInfo = (state) => {
 }
 
 // begin timing related pieces
-const updateTimingModel = (state) => {
-  let letter = stateToLetter(state)
+const updateTimingModel = (state, special = null) => {
+  let letter
+  if (special.length === 0) {
+    letter = stateToLetterStd(state)
+  } else {
+    letter = special
+  }
   let mdl = userModelState.getUserModelTimingMdl(state, true)
-  if(mdl.length==0) {
-    mdl = elph.initOnlineELPH()  //TODO init with useful Hspace
+  if (mdl.length === 0) {
+    mdl = elph.initOnlineELPH()  // TODO init with useful Hspace
   }
   mdl = elph.updateOnlineELPH(letter, mdl)
-  return userModelState.setUserModelTimingMdl(state,mdl)
+  return userModelState.setUserModelTimingMdl(state, mdl)
 }
 
-const stateToLetter = (state) => {
+const stateToLetterStd = (state) => {
   let tvar = topicVariance(state)
-  let sch = userModelState.getSearchState() 
+  let sch = userModelState.getSearchState()
   let shp = userModelState.getShoppingState() // this is listed as 'never hit' in flag source
-  let buy = userModelState.getUserBuyingState() // shopping or buying same to us for now
-  return elph.alphabetizer(tvar, shp, buy) // need to encode two more, or change alphabetizer
+  let buy = shp || userModelState.getUserBuyingState() // shopping or buying same to us for now
+  let rec = recencyCalc(state)
+  return elph.alphabetizer(tvar, sch, buy, false, false, 'low', rec) // need to encode two more, or change alphabetizer
 }
 
-const topicVariance = (state) => {
-  let varval = 1
-  return valueToLowHigh(varval,1.5)
+const topicVariance = (state) => { // this is a fairly random function; would have preferred something else
+  let history = userModelState.getPageScoreHistory(state, true)
+  let nback = history.length
+  let scores = um.deriveCategoryScores(history)
+  let indexOfMax = um.vectorIndexOfMax(scores)
+  let varval = nback / scores[indexOfMax]
+  return valueToLowHigh(varval, 1.1)
+}
+
+const recencyCalc = (state) => { // using unidle time here; might be better to pick something else
+  let now = new Date().getTime()
+  let diff = now - userModelState.getLastUserIdleStopTime(state)
+  return valueToLowHigh(diff, 60)
 }
 
 const valueToLowHigh = (x, thresh) => {
@@ -259,7 +275,6 @@ const testShoppingData = (state, url) => {
   } else if (hostname !== 'amazon.com' && lastShopState) {
     state = userModelState.unFlagShoppingState(state)
   }
-
   return state
 }
 
@@ -361,7 +376,6 @@ const classifyPage = (state, action, windowId) => {
   let scores = um.deriveCategoryScores(history)
   let indexOfMax = um.vectorIndexOfMax(scores)
   let winnerOverTime = catNames[indexOfMax].split('-')
-
   appActions.onUserModelLog('Site visited', {url, immediateWinner, winnerOverTime})
 
   return state
@@ -671,6 +685,7 @@ const getMethods = () => {
     testShoppingData,
     testSearchState,
     recordUnIdle,
+    updateTimingModel,
     basicCheckReadyAdServe,
     classifyPage,
     saveCachedInfo,
