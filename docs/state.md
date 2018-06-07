@@ -636,6 +636,8 @@ AppStore
     adClass: any,
     adFrequency: any,
     adServed: any,
+    available: boolean,
+    config: boolean,
     currentSSID: string,
     error: {
       caller: string,

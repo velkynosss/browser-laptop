@@ -5,6 +5,7 @@
 'use strict'
 const um = require('@brave-intl/bat-usermodel')
 const elph = require('@brave-intl/bat-elph')
+const braveNotifier = require('brave-node-notifier')
 const path = require('path')
 const getSSID = require('detect-ssid')
 const underscore = require('underscore')
@@ -176,6 +177,21 @@ const processLocales = (state, result) => {
 }
 
 const initialize = (state, adEnabled) => {
+  if (adEnabled === false) {
+    return state
+  }
+
+  // check if notifications are available
+  if (!braveNotifier.available()) {
+    appActions.changeSetting(settings.ADS_ENABLED, false)
+    state = userModelState.setUserModelValue(state, 'available', false)
+  } else {
+    state = userModelState.setUserModelValue(state, 'available', true)
+  }
+
+  // check if notifications are configured correctly
+  appActions.onNativeNotificationCheck()
+
   // TODO turn back on?
   // state = userModelState.setAdFrequency(state, 15)
 
