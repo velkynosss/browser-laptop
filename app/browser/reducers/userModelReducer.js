@@ -183,7 +183,6 @@ const userModelReducer = (state, action, immutableAction) => {
         demoApi.appendValue(eventName, data)
 
         state = userModel.generateAdReportingEvent(state, 'notify', action)
-
         break
       }
     case appConstants.APP_ON_USERMODEL_COLLECT_ACTIVITY:

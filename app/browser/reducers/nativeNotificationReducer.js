@@ -28,7 +28,16 @@ const nativeNotifications = (state, action, immutableAction) => {
         notificationUtil.createNotification(action.get('options'))
         break
       }
-    case appConstants.APP_ON_NATIVE_NOTIFICATION_CONFIG:
+    case appConstants.APP_ON_NATIVE_NOTIFICATION_CONFIGURATION_CHECK:
+      {
+        braveNotifier.configured((err, result) => {
+          appActions.onUserModelLog(appConstants.APP_ON_NATIVE_NOTIFICATION_CONFIGURATION_CHECK, {err, result})
+
+          appActions.onNativeNotificationConfigurationReport((!err) && (result))
+        })
+        break
+      }
+    case appConstants.APP_ON_NATIVE_NOTIFICATION_CONFIGURATION_REPORT:
       {
         const ok = !!action.get('ok')
 
@@ -36,19 +45,22 @@ const nativeNotifications = (state, action, immutableAction) => {
           appActions.changeSetting(settings.ADS_ENABLED, false)
         }
 
-        state = userModelState.setUserModelValue(state, 'config', ok)
+        state = userModelState.setUserModelValue(state, 'configured', ok)
         break
       }
-    case appConstants.APP_ON_NATIVE_NOTIFICATION_CHECK:
+    case appConstants.APP_ON_NATIVE_NOTIFICATION_ALLOWED_CHECK:
       {
-        braveNotifier.configured((err, result) => {
-          if (err) {
-            appActions.onUserModelLog('Configured error', {err, result})
-            result = false
-          }
+        braveNotifier.enabled((err, result) => {
+          appActions.onUserModelLog(appConstants.APP_ON_NATIVE_NOTIFICATION_ALLOWED_CHECK, {err, result})
 
-          appActions.onNativeNotificationConfig(result)
+          appActions.onNativeNotificationAllowedReport((!err) && (result))
         })
+        break
+      }
+    case appConstants.APP_ON_NATIVE_NOTIFICATION_ALLOWED_REPORT:
+      {
+        state = userModelState.setUserModelValue(state, 'allowed', !!action.get('ok'))
+        break
       }
   }
 

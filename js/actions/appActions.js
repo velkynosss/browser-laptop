@@ -2089,16 +2089,29 @@ const appActions = {
     })
   },
 
-  onNativeNotificationConfig: function (ok) {
+  onNativeNotificationConfigurationCheck: function () {
     dispatch({
-      actionType: appConstants.APP_ON_NATIVE_NOTIFICATION_CONFIG,
+      actionType: appConstants.APP_ON_NATIVE_NOTIFICATION_CONFIGURATION_CHECK
+    })
+  },
+
+  onNativeNotificationConfigurationReport: function (ok) {
+    dispatch({
+      actionType: appConstants.APP_ON_NATIVE_NOTIFICATION_CONFIGURATION_REPORT,
       ok
     })
   },
 
-  onNativeNotificationCheck: function () {
+  onNativeNotificationAllowedCheck: function () {
     dispatch({
-      actionType: appConstants.APP_ON_NATIVE_NOTIFICATION_CHECK
+      actionType: appConstants.APP_ON_NATIVE_NOTIFICATION_ALLOWED_CHECK
+    })
+  },
+
+  onNativeNotificationAllowedReport: function (ok) {
+    dispatch({
+      actionType: appConstants.APP_ON_NATIVE_NOTIFICATION_ALLOWED_REPORT,
+      ok
     })
   },
 

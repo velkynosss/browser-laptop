@@ -136,13 +136,18 @@ const generateAdReportingEvent = (state, eventType, action) => {
 
         if (!mapping[key]) return state
 
-        map.settings = {}
+        map.settings = {
+          notifications: {
+            configured: userModelState.getUserModelValue(state, 'configured'),
+            allowed: userModelState.getUserModelValue(state, 'allowed')
+          }
+        }
         underscore.keys(mapping).forEach((k) => {
           const v = mapping[k]
 
-          // state.settings isn't updated yet!
+          // state.settings isn't updated yet (sigh...)
           map.settings[v] = k !== key ? getSetting(k, state.settings) : action.get('value')
-          if (k === settings.ADS_OPERATING_MODULE) map.settings[v] = map.settings[v] ? 'B' : 'A'
+          if (k === settings.ADS_OPERATING_MODE) map.settings[v] = map.settings[v] ? 'B' : 'A'
         })
         break
       }
@@ -196,8 +201,9 @@ const initialize = (state, adEnabled) => {
     state = userModelState.setUserModelValue(state, 'available', true)
   }
 
-  // check if notifications are configured correctly
-  appActions.onNativeNotificationCheck()
+  // check if notifications are configured correctly and currently allowed
+  appActions.onNativeNotificationConfigurationCheck()
+  appActions.onNativeNotificationAllowedCheck()
 
   // after the app has initialized, load the big files we need
   // this could be done however slowly in the background
@@ -424,13 +430,13 @@ const basicCheckReadyAdServe = (state, windowId) => {
   if (!priorData) return state
 
   if (!foregroundP) {
-    appActions.onUserModelLog('not in foreground')
+    appActions.onUserModelLog('Ad not served', { reason: 'not in foreground' })
 
     return state
   }
 
   if (!userModelState.allowedToShowAdBasedOnHistory(state)) {
-    appActions.onUserModelLog('Ad throttled')
+    appActions.onUserModelLog('Ad not served', { reason: 'not allowed based on history' })
 
     return state
   }
@@ -451,7 +457,7 @@ const basicCheckReadyAdServe = (state, windowId) => {
 
   const bundle = sampleAdFeed
   if (!bundle) {
-    appActions.onUserModelLog('No ad catalog')
+    appActions.onUserModelLog('Ad not served', { reason: 'no ad catalog' })
 
     return state
   }
@@ -463,7 +469,7 @@ const basicCheckReadyAdServe = (state, windowId) => {
   const indexOfMax = um.vectorIndexOfMax(scores)
   const category = catNames[indexOfMax]
   if (!category) {
-    appActions.onUserModelLog('No category at offset indexOfMax', {indexOfMax})
+    appActions.onUserModelLog('Ad not served', { reason: 'no category at offset indexOfMax', indexOfMax })
 
     return state
   }
@@ -477,7 +483,7 @@ const basicCheckReadyAdServe = (state, windowId) => {
     if (result) break
   }
   if (!result) {
-    appActions.onUserModelLog('No ads for category', {category})
+    appActions.onUserModelLog('Ad not served', { reason: 'no ads for category', category })
 
     return state
   }
@@ -490,7 +496,7 @@ const basicCheckReadyAdServe = (state, windowId) => {
   const allSeen = (adsNotSeen.length <= 0)
 
   if (allSeen) {
-    appActions.onUserModelLog('seen all ads in this category, so unmarking')
+    appActions.onUserModelLog('Ad round-robin', { category, adsSeen, adsNotSeen })
     // unmark all
     for (let i = 0; i < result.length; i++) {
       const uuid = result[i].uuid
@@ -505,7 +511,8 @@ const basicCheckReadyAdServe = (state, windowId) => {
   const payload = adsNotSeen[arbitraryKey]
 
   if (!payload) {
-    appActions.onUserModelLog('No ad at offset for winnerOverTime', {category, winnerOverTime, arbitraryKey})
+    appActions.onUserModelLog('Ad not served',
+                              { reason: 'no ad for winnerOverTime', category, winnerOverTime, arbitraryKey })
 
     return state
   }
@@ -514,15 +521,16 @@ const basicCheckReadyAdServe = (state, windowId) => {
   const notificationUrl = payload['notificationURL']
   const advertiser = payload['advertiser']
   if (!notificationText || !notificationUrl || !advertiser) {
-    appActions.onUserModelLog('Incomplete ad information',
-                              {category, winnerOverTime, arbitraryKey, notificationUrl, notificationText, advertiser})
+    appActions.onUserModelLog('Ad not served',
+                              { reason: 'incomplete ad information', category, winnerOverTime, arbitraryKey, notificationUrl, notificationText, advertiser })
     return state
   }
 
   const uuid = payload.uuid
 
   goAheadAndShowTheAd(windowId, advertiser, notificationText, notificationUrl, uuid)
-  appActions.onUserModelLog(notificationTypes.AD_SHOWN, {category, winnerOverTime, arbitraryKey, notificationUrl, notificationText, advertiser, uuid, hierarchy})
+  appActions.onUserModelLog(notificationTypes.AD_SHOWN,
+                            {category, winnerOverTime, arbitraryKey, notificationUrl, notificationText, advertiser, uuid, hierarchy})
   state = userModelState.appendAdShownToAdHistory(state)
 
   return state
@@ -686,7 +694,7 @@ const uploadLogs = (state, stamp, retryIn) => {
   const path = '/v1/surveys/reporter/' + userModelState.getAdUUID(state) + '?product=ads-test'
 
   if (stamp) {
-    const data = events.some(entry => entry.stamp > stamp)
+    const data = events.filter(entry => entry.get('stamp') > stamp)
 
     state = userModelState.setReportingEventQueue(state, data)
     appActions.onUserModelLog('Events uploaded', { previous: state.size, current: data.size })
