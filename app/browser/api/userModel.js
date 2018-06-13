@@ -66,9 +66,14 @@ const generateAdReportingEvent = (state, eventType, action) => {
             }
           case notificationTypes.NOTIFICATION_RESULT:
             {
+              const uuid = data.get('uuid')
               const result = data.get('result')
               const translate = { 'clicked': 'clicked', 'closed': 'dismissed', 'ignored': 'timeout' }
               map.notificationType = translate[result] || result // SCL note; put the click/no-click elph update here
+
+              if (map.notificationType === 'clicked' || map.notificationType === 'dismissed') {
+                state = userModelState.recordAdUUIDSeen(state, uuid)
+              }
               break
             }
           case notificationTypes.NOTIFICATION_CLICK:
@@ -477,8 +482,28 @@ const basicCheckReadyAdServe = (state, windowId) => {
     return state
   }
 
-  const arbitraryKey = randomKey(result)
-  const payload = result[arbitraryKey]
+  const seen = userModelState.getAdUUIDSeen(state)
+
+  let adsSeen = result.filter(x => seen.get(x.uuid))
+  let adsNotSeen = result.filter(x => !seen.get(x.uuid))
+
+  const allSeen = (adsNotSeen.length <= 0)
+
+  if (allSeen) {
+    appActions.onUserModelLog('seen all ads in this category, so unmarking')
+    // unmark all
+    for (let i = 0; i < result.length; i++) {
+      const uuid = result[i].uuid
+      const unsee = 0
+      state = userModelState.recordAdUUIDSeen(state, uuid, unsee)
+    }
+    adsNotSeen = adsSeen
+  } // else - recordAdUUIDSeen - this actually only happens in click-or-close event capture in generateAdReportingEvent in this file
+
+  // select an ad that isn't seen
+  const arbitraryKey = randomKey(adsNotSeen)
+  const payload = adsNotSeen[arbitraryKey]
+
   if (!payload) {
     appActions.onUserModelLog('No ad at offset for winnerOverTime', {category, winnerOverTime, arbitraryKey})
 
@@ -494,7 +519,7 @@ const basicCheckReadyAdServe = (state, windowId) => {
     return state
   }
 
-  const uuid = generateAdUUIDString()
+  const uuid = payload.uuid
 
   goAheadAndShowTheAd(windowId, advertiser, notificationText, notificationUrl, uuid)
   appActions.onUserModelLog(notificationTypes.AD_SHOWN, {category, winnerOverTime, arbitraryKey, notificationUrl, notificationText, advertiser, uuid, hierarchy})

@@ -133,6 +133,27 @@ const userModelState = {
     return appendToRingBufferUnderKey(state, stateKey, unixTime, maxRowsInAdsShownHistory)
   },
 
+  getAdUUIDSeen: (state) => {
+    const key = ['userModel', 'adsUUIDSeen']
+    let seen = state.getIn(key) || Immutable.Map()
+
+    if (!Immutable.Map.isMap(seen)) {
+      seen = Immutable.Map()
+    }
+
+    return seen
+  },
+
+  recordAdUUIDSeen: (state, uuid, value = 1) => {
+    const key = ['userModel', 'adsUUIDSeen']
+    let seen = state.getIn(key) || Immutable.Map()
+
+    seen = seen.setIn([uuid], value)
+    state = state.setIn(key, seen)
+
+    return state
+  },
+
   allowedToShowAdBasedOnHistory: (state) => {
     const history = state.getIn(['userModel', 'adsShownHistory']) || []
 
