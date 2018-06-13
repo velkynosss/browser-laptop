@@ -2,27 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// SCL COMMENTS
-// Like with UMS, it was written in an aspirational way, not because I had any idea if
-// it was correct.
-// initialize should initialize the UMS. At present it is missing initialization for searching/shopping/userActivity
-// APP_IDLE_STATE_CHANGED
-// I was hoping idle would happen after like 2 minutes of browser idleness
-// It does occasionally fire, but the period of time is indeterminate and doesn't look reliable
-// APP_SHUTTING_DOWN
-// should do stuff when browser is shut down
-// APP_ADD_AUTOFILL_XXXX
-// the idea of this is to find when the user has purchased something, so we don't serve him an
-// ad any more. Or, perhaps this is a super great time to serve an ad. Anyway I want to record this, and possibly fire off an ad when this happens
-// APP_CHANGE_SETTING
-
-// TODO INCOMPLETES:
-// It is important to have something  like "APP_IDLE_STATE_CHANGED" which records when someone has recently restarted doing stuff
-// I think there should also be something which counts user interactions with the browser, as in, actively is scrolling, reading searching. For now, tab switches and loading is enough.
-// A good time to serve an ad is when the user is about to go back to browsing.
-// Possibly it can all be done through TEXT_SCRAPER_DATA_AVAILABLE and something that does what I wish IDLE_STATE_CHANGE did.
-// END SCL COMMENTS
-
 'use strict'
 
 // Actions

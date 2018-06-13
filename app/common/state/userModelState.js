@@ -2,22 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// -SCL COMMENTS BELOW
-// This was written as "aspirational." Most has not been tested
-// State should capture
-// 1. searching state (url, score, search values, time) -note these are now hard coded to be score = 1 at google, 0 every other time
-// 2. is user shopping now (url, score, search values, time) -same as searching except hard coded to be score = 1 at amazon, 0 every other url
-// 3. ad served, time, value (3 month buffer)
-// 4. error (something went wrong)
-// 5. page classification scores, score, url, (time) (3 month buffer)
-// 6. userModel unidle time (last time browser woke up)
-// at present, searching and shopping states need to be initialized and properly set
-// there is still missing something in the reducer which calls them at the right time,
-// unless we want to just overload the APP_TEXT_SCRAPER_DATA_AVAILABLE section and test for all shoppiness there
-// (I think this will work and is the right thing to do)
-// TODO INCOMPLETES; something which logs the AUTOFILL events, page, date, moving average score up to that autofill, and previous AUTOFILL events/pages/score
-// END SCL COMMENTS
-
 'use strict'
 
 const Immutable = require('immutable')
