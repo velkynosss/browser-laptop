@@ -47,7 +47,7 @@ const userModelReducer = (state, action, immutableAction) => {
       {
         state = userModel.initialize(state)
 
-        state = userModel.generateAdReportingEvent(state, 'restart')
+        state = userModel.generateAdReportingEvent(state, 'restart', action)
         break
       }
     case appConstants.APP_WINDOW_UPDATED:
@@ -57,7 +57,7 @@ const userModelReducer = (state, action, immutableAction) => {
         userModel.appFocused(state, !!winData)
 
         if (winData && winData.get('focused')) {
-          state = userModel.generateAdReportingEvent(state, 'foreground')
+          state = userModel.generateAdReportingEvent(state, 'foreground', action)
         }
 
         break
@@ -158,17 +158,7 @@ const userModelReducer = (state, action, immutableAction) => {
         switch (action.get('key')) {
           case settings.ADS_ENABLED:
             {
-              const adEnabled = action.get('value')
-
-              // this reports `value` true if enabled and false if disabled
-              state = userModel.initialize(state, adEnabled)
-
-              break
-            }
-          // TODO check why this is here and fix if needed, currently is not triggered
-          case settings.ADJUST_FREQ:
-            {
-              state = userModel.changeAdFreq(state, action.get('value'))
+              state = userModel.initialize(state, action.get('value'))
               break
             }
           case settings.ADS_PLACE:
@@ -176,11 +166,16 @@ const userModelReducer = (state, action, immutableAction) => {
               state = userModelState.setAdPlace(state, action.get('value'))
               break
             }
+          case settings.ADS_LOCALE:
+            {
+              state = userModel.changeLocale(state, action.get('value'))
+              break
+            }
         }
 
         // You need to call this at the bottom of the case and not
-        // the top because the `switch` changes the values in question
-        state = userModel.generateAdReportingEvent(state, 'settings')
+        // the top because the `switch` may change the values in question
+        state = userModel.generateAdReportingEvent(state, 'settings', action)
 
         break
       }

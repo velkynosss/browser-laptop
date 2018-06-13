@@ -86,7 +86,6 @@ const generateAdReportingEvent = (state, eventType, action) => {
 
         // must follow the switch statement, so we return from bogus events we don't want to capture, which won't have this
         map.notificationId = data.get('uuid')
-
         break
       }
     case 'load':
@@ -108,7 +107,6 @@ const generateAdReportingEvent = (state, eventType, action) => {
 
         if (!Array.isArray(classification)) classification = classification.toArray()
         map.tabClassification = classification
-
         break
       }
     case 'blur':
@@ -123,12 +121,24 @@ const generateAdReportingEvent = (state, eventType, action) => {
       }
     case 'settings':
       {
-        let config = {}
-        config.operatingMode = getSetting(settings.ADS_OPERATING_MODE, state.settings) ? 'B' : 'A'
-        config.adsPerHour = getSetting(settings.ADS_PER_HOUR, state.settings)
-        config.adsPerDay = getSetting(settings.ADS_PER_DAY, state.settings)
+        const key = action.get('key')
+        const mapping = underscore.invert({
+          locale: settings.ADS_LOCALE,
+          adsPerDay: settings.ADS_PER_DAY,
+          adsPerHour: settings.ADS_PER_HOUR,
+          operatingMode: settings.ADS_OPERATING_MODE
+        })
 
-        map.settings = config
+        if (!mapping[key]) return state
+
+        map.settings = {}
+        underscore.keys(mapping).forEach((k) => {
+          const v = mapping[k]
+
+          // state.settings isn't updated yet!
+          map.settings[v] = k !== key ? getSetting(k, state.settings) : action.get('value')
+          if (k === settings.ADS_OPERATING_MODULE) map.settings[v] = map.settings[v] ? 'B' : 'A'
+        })
         break
       }
     case 'foreground':
@@ -148,31 +158,22 @@ const generateAdReportingEvent = (state, eventType, action) => {
   }
   state = userModelState.appendToReportingEventQueue(state, map)
 
-  // let q = userModelState.getReportingEventQueue(state)
-  // console.log("q: ", q)
-  // state = userModelState.flushReportingEventQueue(state)
-
   appActions.onUserModelLog('Event logged', map)
 
   return state
 }
 
 const processLocales = (state, result) => {
-  if (result == null || !Array.isArray(result)) {
-    return state
-  }
+  if (result == null || !Array.isArray(result) || (result.length === 0)) return state
 
-  result = result.filter(item => item !== 'default')
+  state = userModelState.setUserModelValue(state, 'locales', result)
 
-  if (result.length === 0) {
-    return state
-  }
+  let locale = getSetting(settings.ADS_LOCALE, state.settings)
 
-  if (result.length > 1) {
-    state = userModelState.setUserModelValue(state, 'locales', result)
-  }
+  if (locale) try { locale = um.setLocaleSync(locale) } catch (ex) { locale = '' }
 
-  appActions.changeSetting(settings.ADS_LOCAL, result[0])
+  if (result.indexOf(locale) === -1) appActions.changeSetting(settings.ADS_LOCALE, result[0])
+
   return state
 }
 
@@ -191,9 +192,6 @@ const initialize = (state, adEnabled) => {
 
   // check if notifications are configured correctly
   appActions.onNativeNotificationCheck()
-
-  // TODO turn back on?
-  // state = userModelState.setAdFrequency(state, 15)
 
   // after the app has initialized, load the big files we need
   // this could be done however slowly in the background
@@ -375,8 +373,6 @@ const goAheadAndShowTheAd = (windowId, notificationTitle, notificationText, noti
 }
 
 const classifyPage = (state, action, windowId) => {
-  // console.log('data in', action)// run NB on the code
-
   let headers = action.getIn(['scrapedData', 'headers'])
   let body = action.getIn(['scrapedData', 'body'])
   let url = action.getIn(['scrapedData', 'url'])
@@ -423,11 +419,13 @@ const basicCheckReadyAdServe = (state, windowId) => {
 
   if (!foregroundP) {
     appActions.onUserModelLog('not in foreground')
+
     return state
   }
 
   if (!userModelState.allowedToShowAdBasedOnHistory(state)) {
     appActions.onUserModelLog('Ad throttled')
+
     return state
   }
 
@@ -523,16 +521,16 @@ const serveAdNow = (state, ad) => {
 }
  */
 
-/* frequency a float meaning ads per day */
-const changeAdFrequency = (state, freq) => {
-  state = userModelState.setAdFrequency(state, freq)
+const changeLocale = (state, locale) => {
+  try { locale = um.setLocaleSync(locale) } catch (ex) { return state }
+
+  state = userModelState.setLocale(state, locale)
 
   return state
 }
 
 const retrieveSSID = () => {
-  // i am consistently amazed by the lack of decent network reporting in node.js
-  // os.networkInterfaces() is useless for most things
+  // i am amazed by the lack of decent network reporting in node.js, as os.networkInterfaces() is useless for most things
   // the module below has to run an OS-specific system utility to get the SSID
   // and if we're not on WiFi, there is no reliable way to determine the actual interface in use
 
@@ -688,19 +686,24 @@ const uploadLogs = (state, stamp, retryIn) => {
 }
 
 const downloadSurveys = (state, entries) => {
-  const surveys = userModelState.getUserSurveyQueue(state)
+  if (testingP) {
+    const surveys = userModelState.getUserSurveyQueue(state)
 
-  entries.forEach((entry) => {
-    if (surveys.some(survey => survey.id === entry.id)) return
+    entries.forEach((entry) => {
+      if (surveys.some(survey => survey.id === entry.id)) return
 
-    entry = entry.toJSON()
-    if (!entry.title || !entry.description || !entry.url) {
-      return appActions.onUserModelLog('Incomplete survey information', entry)
-    }
+      entry = entry.toJSON()
+      if (!entry.title || !entry.description || !entry.url) {
+        return appActions.onUserModelLog('Incomplete survey information', entry)
+      }
 
-    state = userModelState.appendToUserSurveyQueue(state, entry)
-    appActions.onUserModelLog('Downloaded survey information', entry)
-  })
+      state = userModelState.appendToUserSurveyQueue(state, entry)
+      appActions.onUserModelLog('Downloaded survey information', entry)
+    })
+  } else {
+    state = userModelState.setUserSurveyQueue(state, Immutable.fromJS(entries))
+    appActions.onUserModelLog('Downloaded survey information', entries)
+  }
 
   return state
 }
@@ -725,7 +728,7 @@ const getMethods = () => {
     basicCheckReadyAdServe,
     classifyPage,
     saveCachedInfo,
-    changeAdFrequency,
+    changeLocale,
     collectActivity,
     uploadLogs,
     downloadSurveys,

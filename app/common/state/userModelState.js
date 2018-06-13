@@ -325,9 +325,9 @@ const userModelState = {
     return state
   },
 
-  setAdFrequency: (state, freq) => {
+  setLocale: (state, locale) => {
     state = validateState(state)
-    state = state.setIn(['userModel', 'adFrequency'], freq)
+    state = state.setIn(['userModel', 'locale'], locale)
     return state
   },
 

@@ -89,7 +89,7 @@ class AdsTab extends ImmutableComponent {
           </div>
           <div className={css(gridStyles.row1col3)}>
             {
-              this.enabled
+              this.enabled && false
                 ? <SettingCheckbox
                   dataL10nIdLeft='Mode A'
                   dataL10nId='Mode B'
