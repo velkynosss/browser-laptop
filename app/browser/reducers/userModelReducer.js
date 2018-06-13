@@ -53,13 +53,10 @@ const userModelReducer = (state, action, immutableAction) => {
     case appConstants.APP_WINDOW_UPDATED:
       {
         let winData = windowState.getActiveWindow(state)
+        let focusP = winData && winData.get('focused')
 
-        userModel.appFocused(state, !!winData)
-
-        if (winData && winData.get('focused')) {
-          state = userModel.generateAdReportingEvent(state, 'foreground', action)
-        }
-
+        userModel.appFocused(state, focusP)
+        state = userModel.generateAdReportingEvent(state, focusP ? 'foreground' : 'background', action)
         break
       }
     case appConstants.APP_TAB_UPDATED: // kind of worthless; fires too often

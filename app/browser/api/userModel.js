@@ -142,6 +142,7 @@ const generateAdReportingEvent = (state, eventType, action) => {
         break
       }
     case 'foreground':
+    case 'background':
     case 'restart':
     default:
       {
@@ -671,8 +672,8 @@ const uploadLogs = (state, stamp, retryIn) => {
   roundtrip({
     method: 'GET',
     path: path
-  }, roundTripOptions, (err, response, entries) => {
-    if (!err) return appActions.onUserModelDownloadSurveys(entries)
+  }, roundTripOptions, (err, response, surveys) => {
+    if (!err) return appActions.onUserModelDownloadSurveys(surveys)
 
     appActions.onUserModelLog('Survey download failed', {
       method: 'GET',
@@ -685,25 +686,12 @@ const uploadLogs = (state, stamp, retryIn) => {
   return state
 }
 
-const downloadSurveys = (state, entries) => {
-  if (testingP) {
-    const surveys = userModelState.getUserSurveyQueue(state)
+const downloadSurveys = (state, surveys) => {
+  appActions.onUserModelLog('Surveys downloaded', surveys)
+  surveys = surveys.filter(survey => survey.get('status') === 'available')
 
-    entries.forEach((entry) => {
-      if (surveys.some(survey => survey.id === entry.id)) return
-
-      entry = entry.toJSON()
-      if (!entry.title || !entry.description || !entry.url) {
-        return appActions.onUserModelLog('Incomplete survey information', entry)
-      }
-
-      state = userModelState.appendToUserSurveyQueue(state, entry)
-      appActions.onUserModelLog('Downloaded survey information', entry)
-    })
-  } else {
-    state = userModelState.setUserSurveyQueue(state, Immutable.fromJS(entries))
-    appActions.onUserModelLog('Downloaded survey information', entries)
-  }
+  state = userModelState.setUserSurveyQueue(state, surveys)
+  appActions.onUserModelLog('Surveys available', surveys)
 
   return state
 }
