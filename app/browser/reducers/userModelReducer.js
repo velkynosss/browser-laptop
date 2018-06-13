@@ -25,13 +25,15 @@
 
 'use strict'
 
+// Actions
+const appActions = require('../../../js/actions/appActions')
+
 // Constants
 const appConstants = require('../../../js/constants/appConstants')
 const settings = require('../../../js/constants/settings')
 
 // State
 const tabState = require('../../common/state/tabState')
-const windows = require('../windows')
 const userModelState = require('../../common/state/userModelState')
 const windowState = require('../../common/state/windowState')
 
@@ -74,11 +76,7 @@ const userModelReducer = (state, action, immutableAction) => {
         const blurred = tabValue && !tabValue.get('active')
 
         state = userModel.tabUpdate(state, action)
-
-        if (blurred) {
-          state = userModel.generateAdReportingEvent(state, 'blur', action)
-        }
-
+        if (blurred) state = userModel.generateAdReportingEvent(state, 'blur', action)
         break
       }
     case appConstants.APP_REMOVE_HISTORY_SITE:
@@ -97,28 +95,22 @@ const userModelReducer = (state, action, immutableAction) => {
       {
         const tabId = action.get('tabId')
         const tab = tabState.getByTabId(state, tabId)
-        if (tab == null) {
-          break
-        }
+        if (tab == null) break
 
         const url = tab.get('url')
         state = userModel.tabUpdate(state, action)
         state = userModel.testShoppingData(state, url)
         state = userModel.testSearchState(state, url)
-
         state = userModel.generateAdReportingEvent(state, 'focus', action)
-
         break
       }
     case appConstants.APP_IDLE_STATE_CHANGED: // TODO where to set this globally
       {
         console.log('idle state changed. action: ', action.toJS())
 
-        const activeWindowId = windows.getActiveWindowId()
-
         if (action.has('idleState') && action.get('idleState') === 'active') {
           state = userModel.recordUnIdle(state)
-          state = userModel.basicCheckReadyAdServe(state, activeWindowId)
+          appActions.onNativeNotificationAllowedCheck(true)
         }
         break
       }
@@ -126,9 +118,7 @@ const userModelReducer = (state, action, immutableAction) => {
       {
         const tabId = action.get('tabId')
         const tab = tabState.getByTabId(state, tabId)
-        if (tab == null) {
-          break
-        }
+        if (tab == null) break
 
         const url = tab.get('url')
         state = userModel.testShoppingData(state, url)
@@ -173,7 +163,6 @@ const userModelReducer = (state, action, immutableAction) => {
         // You need to call this at the bottom of the case and not
         // the top because the `switch` may change the values in question
         state = userModel.generateAdReportingEvent(state, 'settings', action)
-
         break
       }
     case appConstants.APP_ON_USERMODEL_LOG:

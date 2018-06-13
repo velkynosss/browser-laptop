@@ -14,11 +14,14 @@ const appConstants = require('../../../js/constants/appConstants')
 const settings = require('../../../js/constants/settings')
 
 // State
+const windows = require('../windows')
 const userModelState = require('../../common/state/userModelState')
+const Immutable = require('immutable')
 
 // Utils
 const {makeImmutable} = require('../../common/state/immutableUtil')
 const notificationUtil = require('../../renderer/lib/notificationUtil')
+const userModel = require('../api/userModel')
 
 const nativeNotifications = (state, action, immutableAction) => {
   action = immutableAction || makeImmutable(action)
@@ -41,9 +44,7 @@ const nativeNotifications = (state, action, immutableAction) => {
       {
         const ok = !!action.get('ok')
 
-        if (!ok) {
-          appActions.changeSetting(settings.ADS_ENABLED, false)
-        }
+        if (!ok) appActions.changeSetting(settings.ADS_ENABLED, false)
 
         state = userModelState.setUserModelValue(state, 'configured', ok)
         break
@@ -53,13 +54,34 @@ const nativeNotifications = (state, action, immutableAction) => {
         braveNotifier.enabled((err, result) => {
           appActions.onUserModelLog(appConstants.APP_ON_NATIVE_NOTIFICATION_ALLOWED_CHECK, {err, result})
 
-          appActions.onNativeNotificationAllowedReport((!err) && (result))
+          appActions.onNativeNotificationAllowedReport((!err) && (result), !!action.get('serveP'))
         })
         break
       }
     case appConstants.APP_ON_NATIVE_NOTIFICATION_ALLOWED_REPORT:
       {
-        state = userModelState.setUserModelValue(state, 'allowed', !!action.get('ok'))
+        const ok = !!action.get('ok')
+        const serveP = !!action.get('serveP')
+        const previous = userModelState.getUserModelValue(state, 'allowed')
+
+        if ((!serveP) || (ok !== previous)) {
+          const action = Immutable.fromJS({
+            actionType: appConstants.APP_CHANGE_SETTING,
+            key: settings.ADS_ENABLED,
+            value: ok
+          })
+
+          state = userModel.generateAdReportingEvent(state, 'settings', action)
+        }
+
+        state = userModelState.setUserModelValue(state, 'allowed', ok)
+        if (!serveP) break
+
+        if (ok) {
+          state = userModel.checkReadyAdServe(state, windows.getActiveWindowId())
+        } else {
+          appActions.onUserModelLog('Ad not served', { reason: 'notifications not presently allowed' })
+        }
         break
       }
   }

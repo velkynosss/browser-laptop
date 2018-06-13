@@ -128,6 +128,7 @@ const generateAdReportingEvent = (state, eventType, action) => {
       {
         const key = action.get('key')
         const mapping = underscore.invert({
+          enabled: settings.ADS_ENABLED,
           locale: settings.ADS_LOCALE,
           adsPerDay: settings.ADS_PER_DAY,
           adsPerHour: settings.ADS_PER_HOUR,
@@ -203,7 +204,7 @@ const initialize = (state, adEnabled) => {
 
   // check if notifications are configured correctly and currently allowed
   appActions.onNativeNotificationConfigurationCheck()
-  appActions.onNativeNotificationAllowedCheck()
+  appActions.onNativeNotificationAllowedCheck(false)
 
   // after the app has initialized, load the big files we need
   // this could be done however slowly in the background
@@ -234,14 +235,6 @@ const tabUpdate = (state, action) => {
 
   return state
 }
-
-/* presently unused but maybe needed
-const userAction = (state) => {
-  state = userModelState.setUserActivity()
-
-  return state
-}
- */
 
 const removeHistorySite = (state, action) => {
   // check to see how ledger removes history
@@ -425,7 +418,7 @@ const classifyPage = (state, action, windowId) => {
   return state
 }
 
-const basicCheckReadyAdServe = (state, windowId) => {
+const checkReadyAdServe = (state, windowId) => {
 // since this is called on APP_IDLE_STATE_CHANGE, not a good idea to log here...
   if (!priorData) return state
 
@@ -535,25 +528,6 @@ const basicCheckReadyAdServe = (state, windowId) => {
 
   return state
 }
-
-/* presently unused but maybe needed
-const checkReadyAdServe = (state) => {
-  const lastAd = userModelState.getLastServedAd(state)
-  const prevAdServ = lastAd.lastadtime
-  const prevAdId = lastAd.lastadserved
-  const date = new Date().getTime()
-  const timeSinceLastAd = date - prevAdServ
-// make sure you're not serving one too quickly or the same one as last time
-  const shopping = userModelState.getShoppingState(state)
-// is the user shopping (this needs to be recency thing) define ad by the running average class
-  const ad = 1
-
-  if (shopping && (ad !== prevAdId) && (timeSinceLastAd > ledgerUtil.milliseconds.hour)) serveAdNow(state, ad)
-}
-
-const serveAdNow = (state, ad) => {
-}
- */
 
 const changeLocale = (state, locale) => {
   try { locale = um.setLocaleSync(locale) } catch (ex) { return state }
@@ -746,7 +720,7 @@ const getMethods = () => {
     testSearchState,
     recordUnIdle,
     updateTimingModel,
-    basicCheckReadyAdServe,
+    checkReadyAdServe,
     classifyPage,
     saveCachedInfo,
     changeLocale,
@@ -754,13 +728,6 @@ const getMethods = () => {
     uploadLogs,
     downloadSurveys,
     retrieveSSID
-/*
-    checkReadyAdServe,
-    serveAdNow,
-    goAheadAndShowTheAd,
-    lastSingleClassification,
-    userAction
- */
   }
 
   let privateMethods = {}
