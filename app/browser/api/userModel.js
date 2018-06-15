@@ -29,7 +29,6 @@ const notificationTypes = require('../../common/constants/notificationTypes')
 const searchProviders = require('../../../js/data/searchProviders').providers
 
 // Utils
-const urlUtil = require('../../../js/lib/urlutil')
 const urlParse = require('../../common/urlParse')
 const roundtrip = require('./ledger').roundtrip
 
@@ -263,14 +262,12 @@ const updateTimingModel = (state, special = 'lol') => {
   let letter
   if (special.length === 3) {
     letter = stateToLetterStd(state)
-//    console.log("letter is " + letter)
-   } else {
-     letter = special
-   }
+  } else {
+    letter = special
+  }
   let mutability = true
   let mdl = userModelState.getUserModelTimingMdl(state, mutability)
   if (mdl.length === 0) {
-    console.log("updating a null model")
     mdl = elph.initOnlineELPH()  // TODO init with useful Hspace
   }
   mdl = elph.updateOnlineELPH(letter, mdl)
@@ -281,11 +278,11 @@ const stateToLetterStd = (state) => {
   let tvar = topicVariance(state)
   let sch = userModelState.getSearchState(state) // only gets flagged consistently 2nd page
   let shp = userModelState.getShoppingState(state) // this indeed never gets hit
-//  let buy = userModelState.getUserBuyingState(state) // null; check with CC stuff later
+  //  let buy = userModelState.getUserBuyingState(state) // null; check with CC stuff later
   let rec = recencyCalc(state)
   let freq = frequencyCalc(state)
-//  console.log("calc rec  " + rec + " buy = " +  buy + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
-  //buy =   shp || buy // shopping or buying same to us for now
+  //  console.log("calc rec  " + rec + " buy = " +  buy + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
+  // buy =   shp || buy // shopping or buying same to us for now
   let letter = elph.alphabetizer(tvar, sch, shp, false, false, freq, rec) // one more for freq
   console.log(letter)
   return letter
@@ -304,14 +301,14 @@ const topicVariance = (state) => { // would have preferred some other function
 const recencyCalc = (state) => { // using unidle time here; might be better to pick something else
   let now = new Date().getTime()
   let diff = (now - userModelState.getLastUserIdleStopTime(state)) / 1000 // milliseconds
-  //console.log('how long a diff in seconds ' + diff)
+  // console.log('how long a diff in seconds ' + diff)
   return valueToLowHigh(diff, 600) // shorter than 10 minutes from idle
 }
 
 const frequencyCalc = (state) => {
   let now = new Date().getTime()
   let diff = (now - userModelState.getLastSearchTime(state)) / 1000 // milliseconds
-  //console.log('how long a Search diff in seconds ' + diff)
+  // console.log('how long a Search diff in seconds ' + diff)
   return valueToLowHigh(diff, 180) // 3 minutes from search
 }
 

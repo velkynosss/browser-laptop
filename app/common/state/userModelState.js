@@ -231,7 +231,6 @@ const userModelState = {
     return state
   },
 
-
   getShoppingState: (state) => {
     state = validateState(state)
     return state.getIn(['userModel', 'shopActivity'])
