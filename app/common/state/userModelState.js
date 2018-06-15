@@ -210,23 +210,27 @@ const userModelState = {
     return state
   },
 
-  // user is visiting a shopping website
-  flagShoppingState: (state, url) => {
-    state = validateState(state)
-    const date = new Date().getTime()
-
-    state = state
-      .setIn(['userModel', 'shopActivity'], true) // never hit; I think design is wrong
-      .setIn(['userModel', 'shopUrl'], url)
-      .setIn(['userModel', 'lastShopTime'], date)
-
-    return state
-  },
-
   getSearchState: (state) => {
     state = validateState(state)
     return state.getIn(['userModel', 'searchActivity'])
   },
+
+  getLastSearchTime: (state) => {
+    state = validateState(state)
+    return state.getIn(['userModel', 'lastSearchTime'])
+  },
+
+  // user is visiting a shopping website
+  flagShoppingState: (state, url) => {
+    state = validateState(state)
+    const date = new Date().getTime()
+    state = state
+      .setIn(['userModel', 'shopActivity'], true) // never hit; I think design is wrong
+      .setIn(['userModel', 'shopUrl'], url)
+      .setIn(['userModel', 'lastShopTime'], date)
+    return state
+  },
+
 
   getShoppingState: (state) => {
     state = validateState(state)

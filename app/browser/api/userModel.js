@@ -259,15 +259,18 @@ const saveCachedInfo = (state) => {
 }
 
 // begin timing related pieces
-const updateTimingModel = (state, special = null) => {
+const updateTimingModel = (state, special = 'lol') => {
   let letter
-  if (special.length === 0) {
+  if (special.length === 3) {
     letter = stateToLetterStd(state)
-  } else {
-    letter = special
-  }
-  let mdl = userModelState.getUserModelTimingMdl(state, true)
+//    console.log("letter is " + letter)
+   } else {
+     letter = special
+   }
+  let mutability = true
+  let mdl = userModelState.getUserModelTimingMdl(state, mutability)
   if (mdl.length === 0) {
+    console.log("updating a null model")
     mdl = elph.initOnlineELPH()  // TODO init with useful Hspace
   }
   mdl = elph.updateOnlineELPH(letter, mdl)
@@ -276,26 +279,40 @@ const updateTimingModel = (state, special = null) => {
 
 const stateToLetterStd = (state) => {
   let tvar = topicVariance(state)
-  let sch = userModelState.getSearchState()
-  let shp = userModelState.getShoppingState() // this is listed as 'never hit' in flag source
-  let buy = shp || userModelState.getUserBuyingState() // shopping or buying same to us for now
+  let sch = userModelState.getSearchState(state) // only gets flagged consistently 2nd page
+  let shp = userModelState.getShoppingState(state) // this indeed never gets hit
+//  let buy = userModelState.getUserBuyingState(state) // null; check with CC stuff later
   let rec = recencyCalc(state)
-  return elph.alphabetizer(tvar, sch, buy, false, false, 'low', rec) // need to encode two more, or change alphabetizer
+  let freq = frequencyCalc(state)
+//  console.log("calc rec  " + rec + " buy = " +  buy + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
+  //buy =   shp || buy // shopping or buying same to us for now
+  let letter = elph.alphabetizer(tvar, sch, shp, false, false, freq, rec) // one more for freq
+  console.log(letter)
+  return letter
 }
 
-const topicVariance = (state) => { // this is a fairly random function; would have preferred something else
-  let history = userModelState.getPageScoreHistory(state, true)
+const topicVariance = (state) => { // would have preferred some other function
+  let mutable = true
+  let history = userModelState.getPageScoreHistory(state, mutable)
   let nback = history.length
   let scores = um.deriveCategoryScores(history)
   let indexOfMax = um.vectorIndexOfMax(scores)
   let varval = nback / scores[indexOfMax]
-  return valueToLowHigh(varval, 1.1)
+  return valueToLowHigh(varval, 2.5) // 2.5 needs to be changed for ANY algo change here
 }
 
 const recencyCalc = (state) => { // using unidle time here; might be better to pick something else
   let now = new Date().getTime()
-  let diff = now - userModelState.getLastUserIdleStopTime(state)
-  return valueToLowHigh(diff, 60)
+  let diff = (now - userModelState.getLastUserIdleStopTime(state)) / 1000 // milliseconds
+  //console.log('how long a diff in seconds ' + diff)
+  return valueToLowHigh(diff, 600) // shorter than 10 minutes from idle
+}
+
+const frequencyCalc = (state) => {
+  let now = new Date().getTime()
+  let diff = (now - userModelState.getLastSearchTime(state)) / 1000 // milliseconds
+  //console.log('how long a Search diff in seconds ' + diff)
+  return valueToLowHigh(diff, 180) // 3 minutes from search
 }
 
 const valueToLowHigh = (x, thresh) => {
@@ -305,13 +322,12 @@ const valueToLowHigh = (x, thresh) => {
 // end timing related pieces
 
 const testShoppingData = (state, url) => {
-  const hostname = urlUtil.getHostname(url)
+  const hostname = urlParse(url).hostname
   const lastShopState = userModelState.getSearchState(state)
-
-  if (hostname === 'amazon.com') {
+  if (hostname === 'www.amazon.com') {
     const score = 1.0   // eventually this will be more sophisticated than if(), but amazon is always a shopping destination
     state = userModelState.flagShoppingState(state, url, score)
-  } else if (hostname !== 'amazon.com' && lastShopState) {
+  } else if (hostname !== 'www.amazon.com' && lastShopState) {
     state = userModelState.unFlagShoppingState(state)
   }
   return state
@@ -320,7 +336,6 @@ const testShoppingData = (state, url) => {
 const testSearchState = (state, url) => {
   const href = urlParse(url).href
   const lastSearchState = userModelState.getSearchState(state)
-
   // eventually this may be more sophisticated...
   for (let provider of searchProviders) {
     const prefix = provider.search

@@ -80,6 +80,7 @@ const userModelReducer = (state, action, immutableAction) => {
         state = userModel.tabUpdate(state, action)
         state = userModel.testShoppingData(state, url)
         state = userModel.testSearchState(state, url)
+//        state = userModel.updateTimingModel(state) // this may be extraneous
         state = userModel.generateAdReportingEvent(state, 'focus', action)
         break
       }
@@ -103,6 +104,7 @@ const userModelReducer = (state, action, immutableAction) => {
         state = userModel.testShoppingData(state, url)
         state = userModel.testSearchState(state, url)
         state = userModel.classifyPage(state, action, tab.get('windowId'))
+        state = userModel.updateTimingModel(state)
         break
       }
     case appConstants.APP_SHUTTING_DOWN:
