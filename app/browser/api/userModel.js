@@ -20,7 +20,7 @@ const appActions = require('../../../js/actions/appActions')
 
 // Constants
 const notificationTypes = require('../../common/constants/notificationTypes')
-const searchProviders = require('../../../js/data/searchProviders').providers
+// const searchProviders = require('../../../js/data/searchProviders').providers // apparently busted
 const settings = require('../../../js/constants/settings')
 
 // State
@@ -30,7 +30,6 @@ const getSetting = require('../../../js/settings').getSetting
 const Immutable = require('immutable')
 
 // Utils
-const urlUtil = require('../../../js/lib/urlutil')
 const urlParse = require('../../common/urlParse')
 const roundtrip = require('./ledger').roundtrip
 
@@ -294,12 +293,12 @@ const updateTimingModel = (state, special = 'invalid') => {
   if (special === 'invalid') {
     letter = stateToLetterStd(state)
   } else if (special.length === 1) {
-    console.log('state noget enter;' +special)
+    console.log('state noget enter;' + special)
     letter = special
   } //anything else is an error
   let mdl = userModelState.getUserModelTimingMdl(state, true)
   if (mdl.length === 0) {
-    mdl = elph.initOnlineELPH()  // TODO init with useful Hspace
+    mdl = elph.initOnlineELPH() // TODO init with useful Hspace
   }
   mdl = elph.updateOnlineELPH(letter, mdl)
 
@@ -313,8 +312,9 @@ const stateToLetterStd = (state) => {
 //  let buy = shp || userModelState.getUserBuyingState(state) // shopping or buying same to us for now
   let rec = recencyCalc(state)
   let freq = frequencyCalc(state)
-  console.log("calc rec  " + rec + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
+//  console.log("calc rec  " + rec + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
   let letter = elph.alphabetizer(tvar, sch, shp, false, false, freq, rec) // one more for buy perhaps, or xor
+  return letter
 }
 
 const topicVariance = (state) => { // this is a fairly random function; would have preferred something else
@@ -366,22 +366,20 @@ const testSearchState = (state, url) => {
 
   const hostname = urlParse(url).hostname
   const lastSearchState = userModelState.getSearchState(state)
-  if(hostname=== 'www.google.com') {
+  if (hostname === 'www.google.com') {
     state = userModelState.flagSearchState(state, url, 1.0)
   } else if (hostname !== 'www.google.com' && lastSearchState) { 
     state = userModelState.unFlagSearchState(state, url)
   }
     // do this broken thing that only works on 2nd page of search
-    // const href = urlParse(url).href   
+    // const href = urlParse(url).href
     // for (let provider of searchProviders) {
-    //   const prefix = provider.search
-    //   const x = prefix.indexOf('{')
-    //   if ((x <= 0) || (href.indexOf(prefix.substr(0, x)) !== 0)) continue
-
+    // const prefix = provider.search
+    // const x = prefix.indexOf('{')
+    // if ((x <= 0) || (href.indexOf(prefix.substr(0, x)) !== 0)) continue
     // return userModelState.flagSearchState(state, url, 1.0)
-    //if (lastSearchState) state = userModelState.unFlagSearchState(state, url)
-    //return state
-    
+    // if (lastSearchState) state = userModelState.unFlagSearchState(state, url)
+    // return state
   return state
 }
 
