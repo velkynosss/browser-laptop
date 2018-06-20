@@ -318,7 +318,7 @@ const stateToLetterStd = (state) => {
 //  let buy = shp || userModelState.getUserBuyingState(state) // shopping or buying same to us for now
   let rec = recencyCalc(state)
   let freq = frequencyCalc(state)
- //\ console.log("calc rec  " + rec + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
+ // console.log("calc rec  " + rec + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
   let letter = elph.alphabetizer(tvar, sch, shp, false, false, freq, rec) // one more for buy perhaps, or xor
   return letter
 }
