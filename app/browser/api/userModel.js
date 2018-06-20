@@ -82,11 +82,17 @@ const generateAdReportingEvent = (state, eventType, action) => {
               const uuid = data.get('uuid')
               const result = data.get('result')
               const translate = { 'clicked': 'clicked', 'closed': 'dismissed', 'ignored': 'timeout' }
-              map.notificationType = translate[result] || result // SCL note; put the click/no-click elph update here
+              map.notificationType = translate[result] || result
 
               if (map.notificationType === 'clicked' || map.notificationType === 'dismissed') {
                 state = userModelState.recordAdUUIDSeen(state, uuid)
               }
+              console.log(map.notificationType)
+              if (map.notificationType === 'clicked' || map.notificationType === 'dismissed' || map.notificationType === 'timeout') {
+                const translateElph = { 'clicked': 'z', 'dismissed': 'y', 'timeout': 'y' } // refers to elph alphabetizer
+                state = updateTimingModel(state, translateElph[map.notificationType])
+              }
+
               break
             }
 
@@ -293,15 +299,15 @@ const updateTimingModel = (state, special = 'invalid') => {
   if (special === 'invalid') {
     letter = stateToLetterStd(state)
   } else if (special.length === 1) {
-    console.log('state noget enter;' + special)
+// console.log('state noget enter;'  + special)
     letter = special
-  } //anything else is an error
+  } // anything else is an error
   let mdl = userModelState.getUserModelTimingMdl(state, true)
   if (mdl.length === 0) {
     mdl = elph.initOnlineELPH() // TODO init with useful Hspace
   }
   mdl = elph.updateOnlineELPH(letter, mdl)
-
+  // console.log('letter is ' + letter)
   return userModelState.setUserModelTimingMdl(state, mdl)
 }
 
@@ -312,7 +318,7 @@ const stateToLetterStd = (state) => {
 //  let buy = shp || userModelState.getUserBuyingState(state) // shopping or buying same to us for now
   let rec = recencyCalc(state)
   let freq = frequencyCalc(state)
-//  console.log("calc rec  " + rec + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
+ //\ console.log("calc rec  " + rec + " search= " + sch + " tvar = " + tvar +  " shop "+ shp +  " since search " + freq + " alphabetizing")
   let letter = elph.alphabetizer(tvar, sch, shp, false, false, freq, rec) // one more for buy perhaps, or xor
   return letter
 }
@@ -368,7 +374,7 @@ const testSearchState = (state, url) => {
   const lastSearchState = userModelState.getSearchState(state)
   if (hostname === 'www.google.com') {
     state = userModelState.flagSearchState(state, url, 1.0)
-  } else if (hostname !== 'www.google.com' && lastSearchState) { 
+  } else if (hostname !== 'www.google.com' && lastSearchState) {
     state = userModelState.unFlagSearchState(state, url)
   }
     // do this broken thing that only works on 2nd page of search
@@ -461,7 +467,7 @@ const classifyPage = (state, action, windowId) => {
   return state
 }
 
-const checkReadyAdServe = (state, windowId) => {
+const checkReadyAdServe = (state, windowId) => {  // around here is where you will check in with elph
   if (noop(state)) return state
 
   if (!foregroundP) {

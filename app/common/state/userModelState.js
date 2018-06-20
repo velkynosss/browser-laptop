@@ -214,7 +214,7 @@ const userModelState = {
     state = validateState(state)
     return state.getIn(['userModel', 'lastSearchTime'])
   },
-  
+
   // user is visiting a shopping website
   flagShoppingState: (state, url) => {
     if (!userModelState.getAdEnabledValue(state)) return state
