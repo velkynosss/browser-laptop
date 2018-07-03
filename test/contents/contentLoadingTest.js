@@ -18,9 +18,14 @@ describe('content loading', function () {
 
   it('does not allow local files to load other other files', function * () {
     const page1 = Brave.fixtureUrl('localFileAccess.html')
+    const page2 = Brave.fixtureUrl('localFileAccess2.html')
     yield this.app.client
       .tabByIndex(0)
       .url(page1)
+      .windowByUrl(Brave.browserWindowUrl)
+      .waitForTextValue('[data-test-id="tabTitle"]', 'failed')
+      .tabByIndex(0)
+      .url(page2)
       .windowByUrl(Brave.browserWindowUrl)
       .waitForTextValue('[data-test-id="tabTitle"]', 'failed')
   })
