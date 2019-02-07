@@ -1,0 +1,11 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.3
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:extend:20180424':
+    - bloodhound > superagent > extend:
+        patched: '2019-02-07T01:14:59.165Z'
+  'npm:mime:20170907':
+    - bloodhound > superagent > mime:
+        patched: '2019-02-07T01:14:59.165Z'
