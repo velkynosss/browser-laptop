@@ -50,7 +50,9 @@
     "watch-all": "npm run watch & npm run watch-test",
     "watch-test": "cross-env NODE_ENV=test webpack --watch",
     "webpack": "webpack",
-    "win-renpm": "powershell ./tools/windows/re-npm.ps1"
+    "win-renpm": "powershell ./tools/windows/re-npm.ps1",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": "brave/browser-laptop",
   "author": {
@@ -135,7 +137,8 @@
     "underscore": "1.8.3",
     "url-loader": "~0.6.2",
     "v8-compile-cache": "^1.1.0",
-    "webtorrent-remote": ">=2.1.0"
+    "webtorrent-remote": ">=2.1.0",
+    "snyk": "^1.316.1"
   },
   "devDependencies": {
     "asar": "~0.13.0",
@@ -252,5 +255,6 @@
   },
   "engines": {
     "node": ">= 7.9.0"
-  }
+  },
+  "snyk": true
 }
