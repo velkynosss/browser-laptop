@@ -133,7 +133,7 @@
     "tablesort": "5.0.2",
     "tldjs": "^2.3.1",
     "underscore": "1.8.3",
-    "url-loader": "~0.6.2",
+    "url-loader": "~1.0.0",
     "v8-compile-cache": "^1.1.0",
     "webtorrent-remote": ">=2.1.0"
   },
