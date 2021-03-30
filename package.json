@@ -132,7 +132,7 @@
     "string.prototype.startswith": "^0.2.0",
     "tablesort": "5.0.2",
     "tldjs": "^2.3.1",
-    "underscore": "1.8.3",
+    "underscore": "1.12.1",
     "url-loader": "~0.6.2",
     "v8-compile-cache": "^1.1.0",
     "webtorrent-remote": ">=2.1.0"
